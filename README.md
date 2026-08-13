@@ -1,5 +1,7 @@
 # Hikvision Video Düzeltici
 
+**Türkçe** | [English](README.en.md)
+
 Hikvision kameraların `.mp4` uzantısıyla dışa aktardığı, ancak standart olmayan
 MPEG kapsayıcı ve H.265/HEVC video kullanan kayıtları WhatsApp, telefonlar ve web
 tarayıcılarıyla uyumlu MP4 dosyalarına dönüştüren Windows aracıdır.
