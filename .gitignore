@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Kamera kayıtları ve dönüştürülmüş çıktılar
+*.mp4
+*.avi
+*.dav
+*.mov
+*.mkv
+*.ts
+*.mpeg
+*.mpg
+
+# Yerel FFmpeg kopyaları
+ffmpeg.exe
+ffprobe.exe
+ffmpeg/
+bin/
+
+# Editör ve işletim sistemi dosyaları
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
