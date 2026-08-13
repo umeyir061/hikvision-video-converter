@@ -36,10 +36,7 @@ compliant H.264 MP4 that is accepted by far more players and messaging apps.
 
 ## Screenshot
 
-![Hikvision Video Fixer graphical interface](docs/hikvision-video-fixer.png)
-
-_Shown on a Turkish-language Windows installation. The same interface appears
-in English automatically on every non-Turkish Windows display language._
+![Hikvision Video Fixer English interface](docs/hikvision-video-fixer-en.png)
 
 ## Requirements
 
