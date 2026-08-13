@@ -30,11 +30,16 @@ compliant H.264 MP4 that is accepted by far more players and messaging apps.
 - Uses the MP4 `faststart` layout for playback before the download is complete.
 - Offers recommended 1080p, smaller 720p, and original-resolution output modes.
 - Validates the codec, container, and pixel format after conversion.
-- Includes a Turkish graphical interface with progress and cancellation support.
+- Automatically uses Turkish on Turkish Windows installations and English on
+  every other Windows display language.
+- Includes a graphical interface with progress and cancellation support.
 
 ## Screenshot
 
 ![Hikvision Video Fixer graphical interface](docs/hikvision-video-fixer.png)
+
+_Shown on a Turkish-language Windows installation. The same interface appears
+in English automatically on every non-Turkish Windows display language._
 
 ## Requirements
 
@@ -48,22 +53,25 @@ The utility first looks for FFmpeg on the system `PATH`. Alternatively, place
 
 ## Usage
 
-1. Double-click `Hikvision Video Duzeltici.bat`.
-2. Click **Seç…** and select the camera recording.
+1. Double-click `Hikvision Video Fixer.bat`.
+2. Click **Browse…** and select the camera recording.
 3. Adjust the size and quality settings if needed.
-4. Click **Videoyu Düzelt**.
+4. Click **Fix Video**.
 5. Share the newly created `_WhatsApp.mp4` file.
 
 You can also drag a video file onto the `.bat` launcher to open it directly in
 the application.
 
-> The graphical interface is currently in Turkish. **Seç…** means “Browse,” and
-> **Videoyu Düzelt** means “Fix Video.”
+## Language
+
+The application follows the Windows display language automatically. It opens in
+Turkish when the Windows UI language is Turkish and in English for every other
+Windows UI language. No manual language setting is required.
 
 ## Download
 
 Download the latest packaged source from [GitHub Releases](https://github.com/umeyir061/hikvision-video-converter/releases/latest),
-extract the ZIP file, and double-click `Hikvision Video Duzeltici.bat`. Python and
+extract the ZIP file, and double-click `Hikvision Video Fixer.bat`. Python and
 FFmpeg are still required as described above.
 
 ## Command line

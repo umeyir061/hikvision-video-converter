@@ -26,7 +26,9 @@ kabul ettiği standart H.264 MP4 biçiminde yeniden oluşturur.
 - MP4 `faststart` düzeni sayesinde videonun indirme sürerken başlamasını sağlar.
 - Önerilen 1080p, küçük dosya için 720p ve özgün çözünürlük seçenekleri sunar.
 - Dönüştürme sonunda codec, kapsayıcı ve renk biçimini doğrular.
-- Türkçe grafik arayüz, ilerleme göstergesi ve iptal desteği içerir.
+- Türkçe Windows kurulumlarında otomatik Türkçe, diğer bütün Windows görüntüleme
+  dillerinde İngilizce açılır.
+- İlerleme göstergesi ve iptal desteği içeren grafik arayüz sunar.
 
 ## Ekran görüntüsü
 
@@ -52,6 +54,11 @@ Araç önce sistem `PATH` değişkeninde FFmpeg'i arar. Alternatif olarak
 
 Bir video dosyasını doğrudan `.bat` dosyasının üzerine sürükleyip bırakarak da
 arayüzde açabilirsiniz.
+
+## Dil
+
+Uygulama Windows görüntüleme dilini otomatik izler. Windows arayüz dili Türkçeyse
+Türkçe, diğer tüm dillerde İngilizce açılır. Elle dil seçmek gerekmez.
 
 ## İndirme
 

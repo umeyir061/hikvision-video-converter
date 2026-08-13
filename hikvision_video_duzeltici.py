@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hikvision kamera videolarını WhatsApp uyumlu MP4 dosyalarına dönüştürür."""
+"""Convert Hikvision camera recordings to WhatsApp-compatible MP4 files."""
 
 from __future__ import annotations
 
@@ -15,8 +15,196 @@ from pathlib import Path
 from typing import Callable
 
 
-APP_TITLE = "Hikvision Video Düzeltici"
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+
+TRANSLATIONS: dict[str, dict[str, str]] = {
+    "tr": {
+        "app_title": "Hikvision Video Düzeltici",
+        "app_description": (
+            "Hikvision H.265 kayıtlarını gerçek, paylaşılabilir H.264 MP4 "
+            "dosyalarına çevirir."
+        ),
+        "probe_unreadable": "Video bilgisi okunamadı.",
+        "probe_invalid": "FFprobe geçersiz bir sonuç döndürdü.",
+        "output_not_created": "Çıktı dosyası oluşturulamadı.",
+        "validation_h264_failed": "Çıktının H.264 video doğrulaması başarısız oldu.",
+        "validation_mp4_failed": "Çıktının MP4 kapsayıcı doğrulaması başarısız oldu.",
+        "validation_pixel_failed": "Çıktının renk biçimi doğrulaması başarısız oldu.",
+        "ffmpeg_not_found": (
+            "FFmpeg bulunamadı. ffmpeg.exe ile ffprobe.exe dosyalarını uygulamanın "
+            "yanına koyun veya FFmpeg'i PATH'e ekleyin."
+        ),
+        "source_not_found": "Seçilen kaynak video bulunamadı.",
+        "same_path": "Kaynak ve çıktı dosyası aynı olamaz.",
+        "no_video_stream": "Kaynak dosyada video akışı bulunamadı.",
+        "source_log": "Kaynak: {codec} — {width}×{height}\n",
+        "preparing_log": "Bozuk paketler atlanıyor ve uyumlu MP4 hazırlanıyor...\n",
+        "cancelled": "Dönüştürme kullanıcı tarafından iptal edildi.",
+        "ffmpeg_failed": "FFmpeg dönüştürmeyi tamamlayamadı.\n{detail}",
+        "cli_missing_input": "Hata: Bir kaynak video yolu belirtin.",
+        "cli_output_exists": (
+            "Hata: Çıktı zaten var: {path}\n--overwrite ile üzerine yazabilirsiniz."
+        ),
+        "cli_progress": "Dönüştürülüyor: %{percent:3d}",
+        "cli_error": "Hata: {error}",
+        "cli_completed": "Tamamlandı: {path} ({size})",
+        "source_video": "Kaynak video",
+        "output_file": "Çıktı dosyası",
+        "browse": "Seç…",
+        "save": "Kaydet…",
+        "size": "Boyut",
+        "quality": "Kalite",
+        "size_1080p": "WhatsApp için önerilen (en fazla 1080p)",
+        "size_720p": "Daha küçük dosya (en fazla 720p)",
+        "size_original": "Özgün çözünürlüğü koru",
+        "quality_balanced": "Dengeli — önerilen",
+        "quality_high": "Yüksek kalite",
+        "quality_small": "Küçük dosya",
+        "select_prompt": "Bir Hikvision videosu seçin.",
+        "cancel": "İptal",
+        "fix_video": "Videoyu Düzelt",
+        "select_video_title": "Hikvision videosunu seçin",
+        "video_files": "Video dosyaları",
+        "all_files": "Tüm dosyalar",
+        "video_ready": "Video seçildi. Dönüştürmeye hazır.",
+        "selected_file_log": "Seçilen dosya: {name}\n",
+        "save_video_title": "Düzeltilmiş videoyu kaydedin",
+        "mp4_video": "MP4 video",
+        "invalid_path": "Dosya yolu geçerli değil.",
+        "select_valid_source": "Lütfen geçerli bir kaynak video seçin.",
+        "overwrite_question": "Bu çıktı zaten var:\n{path}\n\nÜzerine yazılsın mı?",
+        "starting": "Dönüştürme başlatılıyor…",
+        "converting": "Video dönüştürülüyor… %{percent}",
+        "completed_status": "Tamamlandı — video paylaşılmaya hazır.",
+        "validation_success_log": "\nDoğrulama başarılı: MP4 / H.264 / yuv420p\n",
+        "output_log": "Çıktı: {resolution}, {size}\n{path}\n",
+        "success_question": (
+            "Video başarıyla düzeltildi.\n\n{resolution} — {size}\n\n"
+            "Çıktının bulunduğu klasör açılsın mı?"
+        ),
+        "failed_status": "Dönüştürme tamamlanamadı.",
+        "error_log": "\nHATA: {error}\n",
+        "cancel_question": "Devam eden dönüştürme iptal edilsin mi?",
+        "cancelling": "Dönüştürme iptal ediliyor…",
+        "close_question": "Dönüştürme sürüyor. İptal edilip uygulama kapatılsın mı?",
+        "arg_description": (
+            "Hikvision kamera videolarını WhatsApp uyumlu MP4 dosyalarına dönüştürür."
+        ),
+        "arg_input": "Kaynak video",
+        "arg_output": "Çıktı MP4 yolu",
+        "arg_size": "Azami çıktı boyutu (varsayılan: 1080p)",
+        "arg_cli": "Grafik arayüz olmadan çalıştır",
+        "arg_overwrite": "Var olan çıktının üzerine yaz",
+    },
+    "en": {
+        "app_title": "Hikvision Video Fixer",
+        "app_description": (
+            "Converts Hikvision H.265 recordings to real, shareable H.264 MP4 files."
+        ),
+        "probe_unreadable": "Could not read the video information.",
+        "probe_invalid": "FFprobe returned an invalid result.",
+        "output_not_created": "The output file could not be created.",
+        "validation_h264_failed": "H.264 video validation failed for the output.",
+        "validation_mp4_failed": "MP4 container validation failed for the output.",
+        "validation_pixel_failed": "Pixel format validation failed for the output.",
+        "ffmpeg_not_found": (
+            "FFmpeg was not found. Place ffmpeg.exe and ffprobe.exe next to the "
+            "application or add FFmpeg to PATH."
+        ),
+        "source_not_found": "The selected source video was not found.",
+        "same_path": "The source and output paths cannot be the same.",
+        "no_video_stream": "No video stream was found in the source file.",
+        "source_log": "Source: {codec} — {width}×{height}\n",
+        "preparing_log": "Skipping corrupt packets and preparing a compatible MP4...\n",
+        "cancelled": "The conversion was cancelled by the user.",
+        "ffmpeg_failed": "FFmpeg could not complete the conversion.\n{detail}",
+        "cli_missing_input": "Error: Specify a source video path.",
+        "cli_output_exists": (
+            "Error: Output already exists: {path}\nUse --overwrite to replace it."
+        ),
+        "cli_progress": "Converting: {percent:3d}%",
+        "cli_error": "Error: {error}",
+        "cli_completed": "Completed: {path} ({size})",
+        "source_video": "Source video",
+        "output_file": "Output file",
+        "browse": "Browse…",
+        "save": "Save…",
+        "size": "Size",
+        "quality": "Quality",
+        "size_1080p": "Recommended for WhatsApp (up to 1080p)",
+        "size_720p": "Smaller file (up to 720p)",
+        "size_original": "Keep original resolution",
+        "quality_balanced": "Balanced — recommended",
+        "quality_high": "High quality",
+        "quality_small": "Smaller file",
+        "select_prompt": "Select a Hikvision video.",
+        "cancel": "Cancel",
+        "fix_video": "Fix Video",
+        "select_video_title": "Select a Hikvision video",
+        "video_files": "Video files",
+        "all_files": "All files",
+        "video_ready": "Video selected. Ready to convert.",
+        "selected_file_log": "Selected file: {name}\n",
+        "save_video_title": "Save the fixed video",
+        "mp4_video": "MP4 video",
+        "invalid_path": "The file path is invalid.",
+        "select_valid_source": "Select a valid source video.",
+        "overwrite_question": "This output already exists:\n{path}\n\nOverwrite it?",
+        "starting": "Starting conversion…",
+        "converting": "Converting video… {percent}%",
+        "completed_status": "Completed — the video is ready to share.",
+        "validation_success_log": "\nValidation passed: MP4 / H.264 / yuv420p\n",
+        "output_log": "Output: {resolution}, {size}\n{path}\n",
+        "success_question": (
+            "The video was fixed successfully.\n\n{resolution} — {size}\n\n"
+            "Open the folder containing the output?"
+        ),
+        "failed_status": "The conversion could not be completed.",
+        "error_log": "\nERROR: {error}\n",
+        "cancel_question": "Cancel the conversion in progress?",
+        "cancelling": "Cancelling the conversion…",
+        "close_question": "A conversion is in progress. Cancel it and close the application?",
+        "arg_description": (
+            "Convert Hikvision camera recordings to WhatsApp-compatible MP4 files."
+        ),
+        "arg_input": "Source video",
+        "arg_output": "Output MP4 path",
+        "arg_size": "Maximum output size (default: 1080p)",
+        "arg_cli": "Run without the graphical interface",
+        "arg_overwrite": "Overwrite an existing output",
+    },
+}
+
+
+def language_from_windows_id(language_id: int) -> str:
+    """Map a Windows language ID to one of the two supported UI languages."""
+    primary_language = int(language_id) & 0x03FF
+    return "tr" if primary_language == 0x001F else "en"
+
+
+def detect_language() -> str:
+    """Use Turkish only for a Turkish Windows UI; use English everywhere else."""
+    override = os.environ.get("HIKVISION_VIDEO_FIXER_LANG", "").lower()
+    if override in TRANSLATIONS:
+        return override
+    if os.name != "nt":
+        return "en"
+    try:
+        import ctypes
+
+        language_id = int(ctypes.windll.kernel32.GetUserDefaultUILanguage())
+        return language_from_windows_id(language_id)
+    except (AttributeError, OSError, TypeError, ValueError):
+        return "en"
+
+
+LANGUAGE = detect_language()
+
+
+def t(key: str, **values: object) -> str:
+    text = TRANSLATIONS[LANGUAGE][key]
+    return text.format(**values) if values else text
 
 
 class ConversionError(RuntimeError):
@@ -68,12 +256,12 @@ def probe_video(path: Path, ffprobe: str) -> dict:
         ]
     )
     if result.returncode != 0:
-        detail = result.stderr.strip() or "Video bilgisi okunamadı."
+        detail = result.stderr.strip() or t("probe_unreadable")
         raise ConversionError(detail)
     try:
         return json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        raise ConversionError("FFprobe geçersiz bir sonuç döndürdü.") from exc
+        raise ConversionError(t("probe_invalid")) from exc
 
 
 def first_stream(info: dict, stream_type: str) -> dict | None:
@@ -174,16 +362,16 @@ def conversion_command(
 
 def validate_output(path: Path, ffprobe: str) -> dict:
     if not path.is_file() or path.stat().st_size == 0:
-        raise ConversionError("Çıktı dosyası oluşturulamadı.")
+        raise ConversionError(t("output_not_created"))
     info = probe_video(path, ffprobe)
     video = first_stream(info, "video")
     format_name = info.get("format", {}).get("format_name", "")
     if not video or video.get("codec_name") != "h264":
-        raise ConversionError("Çıktının H.264 video doğrulaması başarısız oldu.")
+        raise ConversionError(t("validation_h264_failed"))
     if "mp4" not in format_name:
-        raise ConversionError("Çıktının MP4 kapsayıcı doğrulaması başarısız oldu.")
+        raise ConversionError(t("validation_mp4_failed"))
     if video.get("pix_fmt") != "yuv420p":
-        raise ConversionError("Çıktının renk biçimi doğrulaması başarısız oldu.")
+        raise ConversionError(t("validation_pixel_failed"))
     return info
 
 
@@ -200,19 +388,16 @@ def convert(
     ffmpeg = find_program("ffmpeg")
     ffprobe = find_program("ffprobe")
     if not ffmpeg or not ffprobe:
-        raise ConversionError(
-            "FFmpeg bulunamadı. ffmpeg.exe ile ffprobe.exe dosyalarını uygulamanın "
-            "yanına koyun veya FFmpeg'i PATH'e ekleyin."
-        )
+        raise ConversionError(t("ffmpeg_not_found"))
     if not input_path.is_file():
-        raise ConversionError("Seçilen kaynak video bulunamadı.")
+        raise ConversionError(t("source_not_found"))
     if input_path.resolve() == output_path.resolve():
-        raise ConversionError("Kaynak ve çıktı dosyası aynı olamaz.")
+        raise ConversionError(t("same_path"))
 
     source_info = probe_video(input_path, ffprobe)
     video = first_stream(source_info, "video")
     if not video:
-        raise ConversionError("Kaynak dosyada video akışı bulunamadı.")
+        raise ConversionError(t("no_video_stream"))
     try:
         duration = float(source_info.get("format", {}).get("duration") or 0)
     except (TypeError, ValueError):
@@ -222,10 +407,14 @@ def convert(
     command = conversion_command(ffmpeg, input_path, output_path, max_size, crf)
     if on_log:
         on_log(
-            f"Kaynak: {video.get('codec_name', '?').upper()} — "
-            f"{video.get('width', '?')}×{video.get('height', '?')}\n"
+            t(
+                "source_log",
+                codec=video.get("codec_name", "?").upper(),
+                width=video.get("width", "?"),
+                height=video.get("height", "?"),
+            )
         )
-        on_log("Bozuk paketler atlanıyor ve uyumlu MP4 hazırlanıyor...\n")
+        on_log(t("preparing_log"))
 
     process = subprocess.Popen(
         command,
@@ -252,7 +441,7 @@ def convert(
                     output_path.unlink()
                 except OSError:
                     pass
-            raise ConversionError("Dönüştürme kullanıcı tarafından iptal edildi.")
+            raise ConversionError(t("cancelled"))
 
         if "=" in line:
             key, value = line.split("=", 1)
@@ -282,7 +471,7 @@ def convert(
             output_path.unlink(missing_ok=True)
         except OSError:
             pass
-        raise ConversionError(f"FFmpeg dönüştürmeyi tamamlayamadı.\n{detail}".strip())
+        raise ConversionError(t("ffmpeg_failed", detail=detail).strip())
 
     try:
         result = validate_output(output_path, ffprobe)
@@ -308,14 +497,14 @@ def human_size(size: int) -> str:
 
 def run_cli(args: argparse.Namespace) -> int:
     if not args.input:
-        print("Hata: Bir kaynak video yolu belirtin.", file=sys.stderr)
+        print(t("cli_missing_input"), file=sys.stderr)
         return 2
     input_path = Path(args.input).expanduser().resolve()
     output_path = (
         Path(args.output).expanduser().resolve() if args.output else default_output_path(input_path)
     )
     if output_path.exists() and not args.overwrite:
-        print(f"Hata: Çıktı zaten var: {output_path}\n--overwrite ile üzerine yazabilirsiniz.")
+        print(t("cli_output_exists", path=output_path))
         return 2
 
     last_percent = -1
@@ -324,7 +513,7 @@ def run_cli(args: argparse.Namespace) -> int:
         nonlocal last_percent
         rounded = int(percent)
         if rounded != last_percent:
-            print(f"\rDönüştürülüyor: %{rounded:3d}", end="", flush=True)
+            print(f"\r{t('cli_progress', percent=rounded)}", end="", flush=True)
             last_percent = rounded
 
     try:
@@ -337,9 +526,11 @@ def run_cli(args: argparse.Namespace) -> int:
             on_log=lambda message: print(f"\n{message}", end=""),
         )
     except (ConversionError, OSError) as exc:
-        print(f"\nHata: {exc}", file=sys.stderr)
+        print(f"\n{t('cli_error', error=exc)}", file=sys.stderr)
         return 1
-    print(f"\nTamamlandı: {output_path} ({human_size(output_path.stat().st_size)})")
+    print(
+        f"\n{t('cli_completed', path=output_path, size=human_size(output_path.stat().st_size))}"
+    )
     return 0
 
 
@@ -358,15 +549,26 @@ def run_gui(args: argparse.Namespace) -> int:
     class App:
         def __init__(self, root: tk.Tk) -> None:
             self.root = root
-            self.root.title(APP_TITLE)
+            self.app_title = t("app_title")
+            self.root.title(self.app_title)
             self.root.geometry("760x550")
             self.root.minsize(680, 500)
 
             self.input_var = tk.StringVar()
             self.output_var = tk.StringVar()
-            self.size_var = tk.StringVar(value="WhatsApp için önerilen (en fazla 1080p)")
-            self.quality_var = tk.StringVar(value="Dengeli — önerilen")
-            self.status_var = tk.StringVar(value="Bir Hikvision videosu seçin.")
+            self.size_choices = {
+                t("size_1080p"): "1080p",
+                t("size_720p"): "720p",
+                t("size_original"): "original",
+            }
+            self.quality_choices = {
+                t("quality_balanced"): 23,
+                t("quality_high"): 20,
+                t("quality_small"): 27,
+            }
+            self.size_var = tk.StringVar(value=t("size_1080p"))
+            self.quality_var = tk.StringVar(value=t("quality_balanced"))
+            self.status_var = tk.StringVar(value=t("select_prompt"))
             self.progress_var = tk.DoubleVar(value=0)
             self.events: queue.Queue[tuple[str, object]] = queue.Queue()
             self.stop_event = threading.Event()
@@ -390,49 +592,49 @@ def run_gui(args: argparse.Namespace) -> int:
             outer.pack(fill="both", expand=True)
             outer.columnconfigure(1, weight=1)
 
-            ttk.Label(outer, text=APP_TITLE, font=("Segoe UI", 18, "bold")).grid(
+            ttk.Label(outer, text=self.app_title, font=("Segoe UI", 18, "bold")).grid(
                 row=0, column=0, columnspan=3, sticky="w"
             )
             ttk.Label(
                 outer,
-                text="Hikvision H.265 kayıtlarını gerçek, paylaşılabilir H.264 MP4 dosyalarına çevirir.",
+                text=t("app_description"),
                 foreground="#555555",
             ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(3, 20))
 
-            ttk.Label(outer, text="Kaynak video").grid(row=2, column=0, sticky="w", pady=6)
+            ttk.Label(outer, text=t("source_video")).grid(
+                row=2, column=0, sticky="w", pady=6
+            )
             ttk.Entry(outer, textvariable=self.input_var).grid(
                 row=2, column=1, sticky="ew", padx=10, pady=6
             )
-            ttk.Button(outer, text="Seç…", command=self.choose_input).grid(
+            ttk.Button(outer, text=t("browse"), command=self.choose_input).grid(
                 row=2, column=2, sticky="ew", pady=6
             )
 
-            ttk.Label(outer, text="Çıktı dosyası").grid(row=3, column=0, sticky="w", pady=6)
+            ttk.Label(outer, text=t("output_file")).grid(
+                row=3, column=0, sticky="w", pady=6
+            )
             output_entry = ttk.Entry(outer, textvariable=self.output_var)
             output_entry.grid(row=3, column=1, sticky="ew", padx=10, pady=6)
             output_entry.bind("<Key>", lambda _event: setattr(self, "output_was_manual", True))
-            ttk.Button(outer, text="Kaydet…", command=self.choose_output).grid(
+            ttk.Button(outer, text=t("save"), command=self.choose_output).grid(
                 row=3, column=2, sticky="ew", pady=6
             )
 
-            ttk.Label(outer, text="Boyut").grid(row=4, column=0, sticky="w", pady=6)
+            ttk.Label(outer, text=t("size")).grid(row=4, column=0, sticky="w", pady=6)
             ttk.Combobox(
                 outer,
                 textvariable=self.size_var,
                 state="readonly",
-                values=(
-                    "WhatsApp için önerilen (en fazla 1080p)",
-                    "Daha küçük dosya (en fazla 720p)",
-                    "Özgün çözünürlüğü koru",
-                ),
+                values=tuple(self.size_choices),
             ).grid(row=4, column=1, columnspan=2, sticky="ew", padx=(10, 0), pady=6)
 
-            ttk.Label(outer, text="Kalite").grid(row=5, column=0, sticky="w", pady=6)
+            ttk.Label(outer, text=t("quality")).grid(row=5, column=0, sticky="w", pady=6)
             ttk.Combobox(
                 outer,
                 textvariable=self.quality_var,
                 state="readonly",
-                values=("Dengeli — önerilen", "Yüksek kalite", "Küçük dosya"),
+                values=tuple(self.quality_choices),
             ).grid(row=5, column=1, columnspan=2, sticky="ew", padx=(10, 0), pady=6)
 
             ttk.Separator(outer).grid(
@@ -468,20 +670,20 @@ def run_gui(args: argparse.Namespace) -> int:
             buttons = ttk.Frame(outer)
             buttons.grid(row=10, column=0, columnspan=3, sticky="e")
             self.cancel_button = ttk.Button(
-                buttons, text="İptal", command=self.cancel, state="disabled"
+                buttons, text=t("cancel"), command=self.cancel, state="disabled"
             )
             self.cancel_button.pack(side="left", padx=(0, 8))
             self.start_button = ttk.Button(
-                buttons, text="Videoyu Düzelt", command=self.start
+                buttons, text=t("fix_video"), command=self.start
             )
             self.start_button.pack(side="left")
 
         def choose_input(self) -> None:
             path = filedialog.askopenfilename(
-                title="Hikvision videosunu seçin",
+                title=t("select_video_title"),
                 filetypes=(
-                    ("Video dosyaları", "*.mp4 *.avi *.dav *.mov *.mkv *.ts *.mpeg *.mpg"),
-                    ("Tüm dosyalar", "*.*"),
+                    (t("video_files"), "*.mp4 *.avi *.dav *.mov *.mkv *.ts *.mpeg *.mpg"),
+                    (t("all_files"), "*.*"),
                 ),
             )
             if path:
@@ -492,17 +694,17 @@ def run_gui(args: argparse.Namespace) -> int:
             self.input_var.set(str(path))
             if not self.output_was_manual:
                 self.output_var.set(str(default_output_path(path)))
-            self.status_var.set("Video seçildi. Dönüştürmeye hazır.")
-            self._append_log(f"Seçilen dosya: {path.name}\n")
+            self.status_var.set(t("video_ready"))
+            self._append_log(t("selected_file_log", name=path.name))
 
         def choose_output(self) -> None:
             initial = Path(self.output_var.get()) if self.output_var.get() else Path.cwd()
             path = filedialog.asksaveasfilename(
-                title="Düzeltilmiş videoyu kaydedin",
+                title=t("save_video_title"),
                 initialdir=str(initial.parent),
                 initialfile=initial.name,
                 defaultextension=".mp4",
-                filetypes=(("MP4 video", "*.mp4"),),
+                filetypes=((t("mp4_video"), "*.mp4"),),
             )
             if path:
                 self.output_was_manual = True
@@ -515,28 +717,22 @@ def run_gui(args: argparse.Namespace) -> int:
                 input_path = Path(self.input_var.get()).expanduser().resolve()
                 output_path = Path(self.output_var.get()).expanduser().resolve()
             except (OSError, ValueError):
-                messagebox.showerror(APP_TITLE, "Dosya yolu geçerli değil.")
+                messagebox.showerror(self.app_title, t("invalid_path"))
                 return
             if not input_path.is_file():
-                messagebox.showerror(APP_TITLE, "Lütfen geçerli bir kaynak video seçin.")
+                messagebox.showerror(self.app_title, t("select_valid_source"))
                 return
             if output_path.exists() and not messagebox.askyesno(
-                APP_TITLE, f"Bu çıktı zaten var:\n{output_path}\n\nÜzerine yazılsın mı?"
+                self.app_title, t("overwrite_question", path=output_path)
             ):
                 return
 
-            sizes = {
-                "WhatsApp için önerilen (en fazla 1080p)": "1080p",
-                "Daha küçük dosya (en fazla 720p)": "720p",
-                "Özgün çözünürlüğü koru": "original",
-            }
-            qualities = {"Dengeli — önerilen": 23, "Yüksek kalite": 20, "Küçük dosya": 27}
-            max_size = sizes[self.size_var.get()]
-            crf = qualities[self.quality_var.get()]
+            max_size = self.size_choices[self.size_var.get()]
+            crf = self.quality_choices[self.quality_var.get()]
 
             self.stop_event.clear()
             self.progress_var.set(0)
-            self.status_var.set("Dönüştürme başlatılıyor…")
+            self.status_var.set(t("starting"))
             self.start_button.configure(state="disabled")
             self.cancel_button.configure(state="normal")
             self.worker = threading.Thread(
@@ -581,7 +777,7 @@ def run_gui(args: argparse.Namespace) -> int:
                     if event == "progress":
                         percent = float(value)
                         self.progress_var.set(percent)
-                        self.status_var.set(f"Video dönüştürülüyor… %{int(percent)}")
+                        self.status_var.set(t("converting", percent=int(percent)))
                     elif event == "log":
                         self._append_log(str(value))
                     elif event == "process":
@@ -590,22 +786,26 @@ def run_gui(args: argparse.Namespace) -> int:
                         path, resolution, size = value  # type: ignore[misc]
                         self._set_idle()
                         self.progress_var.set(100)
-                        self.status_var.set("Tamamlandı — video paylaşılmaya hazır.")
+                        self.status_var.set(t("completed_status"))
                         self._append_log(
-                            f"\nDoğrulama başarılı: MP4 / H.264 / yuv420p\n"
-                            f"Çıktı: {resolution}, {size}\n{path}\n"
+                            t("validation_success_log")
+                            + t(
+                                "output_log",
+                                resolution=resolution,
+                                size=size,
+                                path=path,
+                            )
                         )
                         if messagebox.askyesno(
-                            APP_TITLE,
-                            f"Video başarıyla düzeltildi.\n\n{resolution} — {size}\n\n"
-                            "Çıktının bulunduğu klasör açılsın mı?",
+                            self.app_title,
+                            t("success_question", resolution=resolution, size=size),
                         ):
                             subprocess.Popen(["explorer", "/select,", str(path)])
                     elif event == "error":
                         self._set_idle()
-                        self.status_var.set("Dönüştürme tamamlanamadı.")
-                        self._append_log(f"\nHATA: {value}\n")
-                        messagebox.showerror(APP_TITLE, str(value))
+                        self.status_var.set(t("failed_status"))
+                        self._append_log(t("error_log", error=value))
+                        messagebox.showerror(self.app_title, str(value))
             except queue.Empty:
                 pass
             self.root.after(100, self._poll_events)
@@ -623,17 +823,17 @@ def run_gui(args: argparse.Namespace) -> int:
 
         def cancel(self) -> None:
             if self.worker and self.worker.is_alive() and messagebox.askyesno(
-                APP_TITLE, "Devam eden dönüştürme iptal edilsin mi?"
+                self.app_title, t("cancel_question")
             ):
                 self.stop_event.set()
-                self.status_var.set("Dönüştürme iptal ediliyor…")
+                self.status_var.set(t("cancelling"))
                 if self.process and self.process.poll() is None:
                     self.process.terminate()
 
         def close(self) -> None:
             if self.worker and self.worker.is_alive():
                 if not messagebox.askyesno(
-                    APP_TITLE, "Dönüştürme sürüyor. İptal edilip uygulama kapatılsın mı?"
+                    self.app_title, t("close_question")
                 ):
                     return
                 self.stop_event.set()
@@ -648,18 +848,18 @@ def run_gui(args: argparse.Namespace) -> int:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", nargs="?", help="Kaynak video")
-    parser.add_argument("-o", "--output", help="Çıktı MP4 yolu")
+    parser = argparse.ArgumentParser(description=t("arg_description"))
+    parser.add_argument("input", nargs="?", help=t("arg_input"))
+    parser.add_argument("-o", "--output", help=t("arg_output"))
     parser.add_argument(
         "--size",
         choices=("1080p", "720p", "original"),
         default="1080p",
-        help="Azami çıktı boyutu (varsayılan: 1080p)",
+        help=t("arg_size"),
     )
     parser.add_argument("--crf", type=int, choices=range(18, 31), default=23)
-    parser.add_argument("--cli", action="store_true", help="Grafik arayüz olmadan çalıştır")
-    parser.add_argument("--overwrite", action="store_true", help="Var olan çıktının üzerine yaz")
+    parser.add_argument("--cli", action="store_true", help=t("arg_cli"))
+    parser.add_argument("--overwrite", action="store_true", help=t("arg_overwrite"))
     return parser.parse_args()
 
 
