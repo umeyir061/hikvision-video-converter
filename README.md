@@ -1,78 +1,103 @@
-# Hikvision Video Düzeltici
+# Hikvision H.265/HEVC to H.264 MP4 Converter
 
-**Türkçe** | [English](README.en.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D4)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB)
 
-Hikvision kameraların `.mp4` uzantısıyla dışa aktardığı, ancak standart olmayan
-MPEG kapsayıcı ve H.265/HEVC video kullanan kayıtları WhatsApp, telefonlar ve web
-tarayıcılarıyla uyumlu MP4 dosyalarına dönüştüren Windows aracıdır.
+[Türkçe](README.tr.md) | **English**
 
-Kaynak kayıt değiştirilmez veya silinmez. Yeni video aynı klasörde
-`_WhatsApp.mp4` ekiyle oluşturulur.
+A Windows utility that converts Hikvision camera exports using a non-standard
+MPEG container and H.265/HEVC video—even when they have an `.mp4` extension—into
+MP4 files compatible with WhatsApp, smartphones, and web browsers.
 
-## Özellikler
+The source recording is never modified or deleted. The converted video is created
+in the same directory with `_WhatsApp.mp4` appended to its name.
 
-- Standart dışı Hikvision dışa aktarımlarını otomatik algılar.
-- Bozuk paketleri atlar ve eksik zaman damgalarını yeniden oluşturur.
-- Videoyu MP4 içinde H.264 High Profile ve `yuv420p` biçimine dönüştürür.
-- Varsa sesi AAC stereo biçimine çevirir.
-- MP4 `faststart` düzeni sayesinde videonun indirme sürerken başlamasını sağlar.
-- Önerilen 1080p, küçük dosya için 720p ve özgün çözünürlük seçenekleri sunar.
-- Dönüştürme sonunda codec, kapsayıcı ve renk biçimini doğrular.
-- Türkçe grafik arayüz, ilerleme göstergesi ve iptal desteği içerir.
+## What this fixes
 
-## Gereksinimler
+This tool is intended for cases where a **Hikvision MP4 will not play**, a phone
+cannot open the recording, or **WhatsApp reports that the video is corrupt**.
+Some Hikvision exports use an MPEG program stream with H.265/HEVC video despite
+having an `.mp4` extension. The converter rebuilds the recording as a standards-
+compliant H.264 MP4 that is accepted by far more players and messaging apps.
 
-- Windows 10 veya 11
-- Python 3.10 veya üzeri
-- `libx264` destekli [FFmpeg](https://ffmpeg.org/)
+## Features
 
-Araç önce sistem `PATH` değişkeninde FFmpeg'i arar. Alternatif olarak
-`ffmpeg.exe` ve `ffprobe.exe` dosyaları uygulamanın yanına, `bin` klasörüne veya
-`ffmpeg\bin` klasörüne konabilir.
+- Automatically detects non-standard Hikvision exports.
+- Skips corrupt packets and regenerates missing timestamps.
+- Converts video to H.264 High Profile with `yuv420p` inside a real MP4 container.
+- Converts audio to stereo AAC when an audio stream is present.
+- Uses the MP4 `faststart` layout for playback before the download is complete.
+- Offers recommended 1080p, smaller 720p, and original-resolution output modes.
+- Validates the codec, container, and pixel format after conversion.
+- Includes a Turkish graphical interface with progress and cancellation support.
 
-## Kullanım
+## Screenshot
 
-1. `Hikvision Video Duzeltici.bat` dosyasına çift tıklayın.
-2. **Seç…** düğmesiyle kamera videosunu seçin.
-3. İhtiyaç halinde boyut ve kalite ayarlarını değiştirin.
-4. **Videoyu Düzelt** düğmesine basın.
-5. Oluşturulan `_WhatsApp.mp4` dosyasını paylaşın.
+![Hikvision Video Fixer graphical interface](docs/hikvision-video-fixer.png)
 
-Bir video dosyasını doğrudan `.bat` dosyasının üzerine sürükleyip bırakarak da
-arayüzde açabilirsiniz.
+## Requirements
 
-## Komut satırı
+- Windows 10 or 11
+- Python 3.10 or later
+- [FFmpeg](https://ffmpeg.org/) built with `libx264` support
+
+The utility first looks for FFmpeg on the system `PATH`. Alternatively, place
+`ffmpeg.exe` and `ffprobe.exe` next to the application, inside `bin`, or inside
+`ffmpeg\bin`.
+
+## Usage
+
+1. Double-click `Hikvision Video Duzeltici.bat`.
+2. Click **Seç…** and select the camera recording.
+3. Adjust the size and quality settings if needed.
+4. Click **Videoyu Düzelt**.
+5. Share the newly created `_WhatsApp.mp4` file.
+
+You can also drag a video file onto the `.bat` launcher to open it directly in
+the application.
+
+> The graphical interface is currently in Turkish. **Seç…** means “Browse,” and
+> **Videoyu Düzelt** means “Fix Video.”
+
+## Download
+
+Download the latest packaged source from [GitHub Releases](https://github.com/umeyir061/hikvision-video-converter/releases/latest),
+extract the ZIP file, and double-click `Hikvision Video Duzeltici.bat`. Python and
+FFmpeg are still required as described above.
+
+## Command line
 
 ```powershell
-python .\hikvision_video_duzeltici.py "kamera.mp4" --cli
+python .\hikvision_video_duzeltici.py "camera.mp4" --cli
 ```
 
-Örnek seçenekler:
+Example options:
 
 ```powershell
-# Daha küçük 720p çıktı
-python .\hikvision_video_duzeltici.py "kamera.mp4" --cli --size 720p
+# Create a smaller 720p output
+python .\hikvision_video_duzeltici.py "camera.mp4" --cli --size 720p
 
-# Belirli bir çıktı yolu ve yüksek kalite
-python .\hikvision_video_duzeltici.py "kamera.mp4" --cli --crf 20 -o "duzeltilmis.mp4"
+# Set an explicit output path and use high quality
+python .\hikvision_video_duzeltici.py "camera.mp4" --cli --crf 20 -o "fixed.mp4"
 
-# Var olan çıktının üzerine yaz
-python .\hikvision_video_duzeltici.py "kamera.mp4" --cli --overwrite
+# Overwrite an existing output
+python .\hikvision_video_duzeltici.py "camera.mp4" --cli --overwrite
 ```
 
-Tüm seçenekler için:
+To see every option:
 
 ```powershell
 python .\hikvision_video_duzeltici.py --help
 ```
 
-## Gizlilik
+## Privacy
 
-Video dosyaları `.gitignore` tarafından dışlanır. Kamera kayıtları ve oluşturulan
-çıktılar repoya eklenmez.
+Video files are excluded by `.gitignore`. Camera recordings and converted
+outputs are not committed to the repository.
 
-## Lisans
+## License
 
-Bu proje [MIT Lisansı](LICENSE) ile sunulur. Kişisel veya ticari amaçla
-kullanabilir, değiştirebilir ve yeniden dağıtabilirsiniz; telif ve lisans
-bildiriminin kopyalarda korunması gerekir.
+This project is available under the [MIT License](LICENSE). You may use, modify,
+and redistribute it for personal or commercial purposes, provided that the
+copyright and license notice is retained in copies.
