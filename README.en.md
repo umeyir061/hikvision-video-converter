@@ -73,3 +73,9 @@ python .\hikvision_video_duzeltici.py --help
 
 Video files are excluded by `.gitignore`. Camera recordings and converted
 outputs are not committed to the repository.
+
+## License
+
+This project is available under the [MIT License](LICENSE). You may use, modify,
+and redistribute it for personal or commercial purposes, provided that the
+copyright and license notice is retained in copies.

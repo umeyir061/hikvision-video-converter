@@ -70,3 +70,9 @@ python .\hikvision_video_duzeltici.py --help
 
 Video dosyaları `.gitignore` tarafından dışlanır. Kamera kayıtları ve oluşturulan
 çıktılar repoya eklenmez.
+
+## Lisans
+
+Bu proje [MIT Lisansı](LICENSE) ile sunulur. Kişisel veya ticari amaçla
+kullanabilir, değiştirebilir ve yeniden dağıtabilirsiniz; telif ve lisans
+bildiriminin kopyalarda korunması gerekir.
